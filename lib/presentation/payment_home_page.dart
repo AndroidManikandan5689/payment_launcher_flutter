@@ -227,6 +227,40 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                             color: theme.colorScheme.secondary,
                             onPressed: _isLoading ? null : _handleAaniPay,
                           ),
+                          if (PaymentConfig.aaniPayStoreUrl.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 64,
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  final uri = Uri.parse(PaymentConfig.aaniPayStoreUrl);
+                                  try {
+                                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                  } catch (e) {
+                                    _showErrorSnackBar('Could not launch app store: $e');
+                                  }
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.5), width: 1.5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                ),
+                                icon: Icon(Icons.download, size: 24, color: theme.colorScheme.primary),
+                                label: Text(
+                                  'Install Aani Pay',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 16),
                         ],
                       ),
