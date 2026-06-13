@@ -71,6 +71,7 @@ Future<void> launchAaniPayImpl({
     final launched = await launchUrl(
       uri,
       mode: LaunchMode.externalApplication,
+      webOnlyWindowName: '_self',
     );
     if (!launched) {
       html.window.location.href = deepLink;
