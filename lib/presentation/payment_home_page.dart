@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config/payment_config.dart';
@@ -12,6 +13,30 @@ class PaymentHomePage extends StatefulWidget {
 
 class _PaymentHomePageState extends State<PaymentHomePage> {
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAaniFallback();
+    });
+  }
+
+  void _checkAaniFallback() {
+    if (kIsWeb) {
+      final uri = Uri.base;
+      final params = Map<String, String>.from(uri.queryParameters);
+      final fragment = uri.fragment;
+      if (fragment.contains('?')) {
+        final fragmentParams = Uri.parse(fragment.substring(fragment.indexOf('?'))).queryParameters;
+        params.addAll(fragmentParams);
+      }
+
+      if (params['aani_installed'] == 'false') {
+        _showAaniPayNotInstalled();
+      }
+    }
+  }
 
   void _setLoading(bool value) {
     setState(() {
@@ -42,6 +67,11 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
 
   // Show app not installed warning for Aani Pay
   void _showAaniPayNotInstalled() {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final String storeUrl = isIOS
+        ? PaymentConfig.aaniPayAppleStoreUrl
+        : PaymentConfig.aaniPayStoreUrl;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -52,11 +82,11 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
           textAlign: TextAlign.center,
         ),
         actions: [
-          if (PaymentConfig.aaniPayStoreUrl.isNotEmpty)
+          if (storeUrl.isNotEmpty)
             ElevatedButton.icon(
               onPressed: () async {
                 Navigator.pop(context);
-                final uri = Uri.parse(PaymentConfig.aaniPayStoreUrl);
+                final uri = Uri.parse(storeUrl);
                 try {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 } catch (e) {
@@ -234,7 +264,11 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                               height: 64,
                               child: OutlinedButton.icon(
                                 onPressed: () async {
-                                  final uri = Uri.parse(PaymentConfig.aaniPayStoreUrl);
+                                  final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+                                  final String storeUrl = isIOS
+                                      ? PaymentConfig.aaniPayAppleStoreUrl
+                                      : PaymentConfig.aaniPayStoreUrl;
+                                  final uri = Uri.parse(storeUrl);
                                   try {
                                     await launchUrl(uri, mode: LaunchMode.externalApplication);
                                   } catch (e) {

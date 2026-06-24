@@ -52,6 +52,36 @@ Future<void> launchAaniPayImpl({
   required Function(String) onError,
 }) async {
   final String deepLink = PaymentConfig.aaniPayDeepLink;
+  final TargetPlatform platform = defaultTargetPlatform;
+
+  if (platform == TargetPlatform.android) {
+    try {
+      final Uri parsedUri = Uri.parse(deepLink);
+      String intentHost = 'pay';
+      if (parsedUri.scheme == 'aanipay' || parsedUri.scheme == 'aani') {
+        intentHost = parsedUri.host;
+      }
+      String intentPath = parsedUri.path;
+      if (parsedUri.query.isNotEmpty) {
+        intentPath += '?${parsedUri.query}';
+      }
+
+      final String currentUrl = html.window.location.href;
+      String cleanUrl = currentUrl;
+      if (cleanUrl.contains('aani_installed=')) {
+        cleanUrl = cleanUrl.replaceAll(RegExp(r'[&?]aani_installed=[^&]*'), '');
+      }
+      final String separator = cleanUrl.contains('?') ? '&' : '?';
+      final String fallbackUrl = '$cleanUrl${separator}aani_installed=false';
+
+      final String intentUrl = 'intent://$intentHost$intentPath#Intent;scheme=aanipay;package=ae.aletihadpayments.aani;S.browser_fallback_url=${Uri.encodeComponent(fallbackUrl)};end';
+
+      html.window.location.href = intentUrl;
+    } catch (e) {
+      onError('Error launching Aani Pay: $e');
+    }
+    return;
+  }
 
   bool wasBlurred = false;
 
@@ -70,8 +100,7 @@ Future<void> launchAaniPayImpl({
     final uri = Uri.parse(deepLink);
     final launched = await launchUrl(
       uri,
-      mode: LaunchMode.externalApplication,
-      webOnlyWindowName: '_self',
+      mode: LaunchMode.platformDefault,
     );
     if (!launched) {
       html.window.location.href = deepLink;
