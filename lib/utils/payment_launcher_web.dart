@@ -57,11 +57,29 @@ Future<void> launchAaniPayImpl({
   if (platform == TargetPlatform.android) {
     try {
       final Uri parsedUri = Uri.parse(deepLink);
-      String intentHost = 'pay';
-      if (parsedUri.scheme == 'aanipay' || parsedUri.scheme == 'aani') {
-        intentHost = parsedUri.host;
+      String intentScheme = parsedUri.scheme;
+      if (intentScheme != 'aani' && intentScheme != 'aanipay') {
+        intentScheme = 'aani';
       }
+
+      String intentHost = parsedUri.host;
+      if (parsedUri.scheme == 'http' || parsedUri.scheme == 'https') {
+        if (parsedUri.path.contains('request_to_pay_payment')) {
+          intentHost = 'request_to_pay_payment';
+        } else {
+          intentHost = 'pay';
+        }
+      } else {
+        if (intentHost.isEmpty) {
+          intentHost = 'pay';
+        }
+      }
+
       String intentPath = parsedUri.path;
+      if ((parsedUri.scheme == 'http' || parsedUri.scheme == 'https') && parsedUri.path.contains('request_to_pay_payment')) {
+        intentPath = parsedUri.path.replaceAll('/request_to_pay_payment', '');
+      }
+
       if (parsedUri.query.isNotEmpty) {
         intentPath += '?${parsedUri.query}';
       }
@@ -74,7 +92,7 @@ Future<void> launchAaniPayImpl({
       final String separator = cleanUrl.contains('?') ? '&' : '?';
       final String fallbackUrl = '$cleanUrl${separator}aani_installed=false';
 
-      final String intentUrl = 'intent://$intentHost$intentPath#Intent;scheme=aanipay;package=ae.aletihadpayments.aani;S.browser_fallback_url=${Uri.encodeComponent(fallbackUrl)};end';
+      final String intentUrl = 'intent://$intentHost$intentPath#Intent;scheme=$intentScheme;package=ae.aletihadpayments.aani;S.browser_fallback_url=${Uri.encodeComponent(fallbackUrl)};end';
 
       html.window.location.href = intentUrl;
     } catch (e) {
